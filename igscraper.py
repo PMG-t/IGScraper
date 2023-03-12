@@ -17,7 +17,7 @@ class UTILS:
 
     def status_bar(self, status, show_perc=False, dim=40):
         prog = int(status*dim)
-        return '[' + ''.join(['=' for _ in range(prog-1 if prog>0 else 0)]) + ('>' if prog<1 else '') + ''.join([' ' for _ in range(dim-prog if dim-prog>0 else 0)]) + ']' + (': ' + str(status*100) + '%' if show_perc else '')
+        return '[' + ''.join(['=' for _ in range(prog-1 if prog>0 else 0)]) + ('>' if prog<dim else '') + ''.join([' ' for _ in range(dim-prog if dim-prog>0 else 0)]) + ']' + (': ' + str(status*100) + '%' if show_perc else '')
 
     def try_or_default(self, f, args=[], default=None):
         try:
@@ -65,8 +65,7 @@ class IGScraper():
     def init_xpaths(self):
         main_div = self.driver.find_element_by_xpath(self.xpaths['main_div'])
         self.xpaths['head_selector'] =      '//*[@id="' + main_div.get_attribute('id')  + '"]'
-
-        self.xpaths['post_href'] =          self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div/div[2]/article/div[1]/div/child::div/child::div/a'
+        self.xpaths['post_href'] =          self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div/div/article/div[1]/div/child::div/child::div/a'
         
         # self.xpaths['first_post'] =         self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div/div[2]/article/div[1]/div/div[1]/div[1]/a',
         # self.xpaths['post_datetime'] =      self.xpaths['head_selector'] + '/div/div/div[2]/div/div/div[1]/div/div[3]/div/div/div/div/div[2]/div/article/div/div[2]/div/div/div[2]/div[2]/div/div/a/div/time',
@@ -101,5 +100,5 @@ class IGScraper():
         while len(all_posts) < n_post:
             self.timeout_exec(self.scroll_profile, sleeptime=sleeptime)    
             _ = [all_posts.add(post) for post in self.get_posts_href()]
-            self.log(f'Post loaded: {len(all_posts)} / {n_post}: {self.igs_utils.status_bar(len(all_posts)/n_post)}', category='done', overwrite=True)
+            self.log(f'Post loaded: {len(all_posts)} / {n_post} {self.igs_utils.status_bar(len(all_posts)/n_post)}', category='done', overwrite=True)
         return all_posts
