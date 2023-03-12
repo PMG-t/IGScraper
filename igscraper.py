@@ -1,8 +1,11 @@
 import time
 from datetime import datetime
+from termcolor import colored
 
 from selenium import webdriver
-from termcolor import colored
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 
 class UTILS:
     
@@ -65,7 +68,11 @@ class IGScraper():
     def init_xpaths(self):
         main_div = self.driver.find_element_by_xpath(self.xpaths['main_div'])
         self.xpaths['head_selector'] =      '//*[@id="' + main_div.get_attribute('id')  + '"]'
-        self.xpaths['post_href'] =          self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div/div/article/div[1]/div/child::div/child::div/a'
+        self.xpaths['posts_href'] =          self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div/div/article/div[1]/div/child::div/child::div/a'
+        
+        self.xpaths['post_author'] =        self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[1]/div/header/div[2]/div[1]/div[1]/div/div/div[1]/div/div/a'
+        self.xpaths['post_description'] =   self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[2]/div[1]/ul/div/li/div/div/div[2]/div[1]/h1'
+        self.xpaths['post_datetime'] =      self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[2]/div[2]/div/div/a/div/time'
         
         # self.xpaths['first_post'] =         self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div/div[2]/article/div[1]/div/div[1]/div[1]/a',
         # self.xpaths['post_datetime'] =      self.xpaths['head_selector'] + '/div/div/div[2]/div/div/div[1]/div/div[3]/div/div/div/div/div[2]/div/article/div/div[2]/div/div/div[2]/div[2]/div/div/a/div/time',
@@ -91,7 +98,7 @@ class IGScraper():
         self.driver.execute_script('window.scrollBy(0, window.innerHeight)')
 
     def get_posts_href(self):
-        a_elements = self.driver.find_elements_by_xpath(self.xpaths['post_href'])
+        a_elements = self.driver.find_elements_by_xpath(self.xpaths['posts_href'])
         return [self.igs_utils.try_or_default(lambda el: el.get_attribute('href'), args=[a]) for a in a_elements]
 
     def scroll_profile_posts(self, n_post=5, sleeptime=-1):
@@ -102,3 +109,31 @@ class IGScraper():
             _ = [all_posts.add(post) for post in self.get_posts_href()]
             self.log(f'Post loaded: {len(all_posts)} / {n_post} {self.igs_utils.status_bar(len(all_posts)/n_post)}', category='done', overwrite=True)
         return all_posts
+    
+    def get_post_id(self, post_link):
+        return post_link[post_link.index('/p/')+3 : -1]
+
+    def get_post_link(self, post_id):
+        return f'https://www.instagram.com/p/{post_id}/'
+
+    def open_post(self, post_id):
+        post_link = self.get_post_link(post_id)
+        self.driver.get(post_link)
+
+    def safe_find_element(self, xpath, timeout=30):
+        WebDriverWait(self.driver, timeout).until(EC.presence_of_element_located((By.XPATH, xpath)))
+        return self.driver.find_element_by_xpath(xpath)
+
+    def get_post_data(self, post_id, scrape_comments=False):
+        self.open_post(post_id)
+        self.init_xpaths()
+        p_author = self.safe_find_element(self.xpaths['post_author']).text
+        p_description = self.safe_find_element(self.xpaths['post_description']).text
+        p_date = self.safe_find_element(self.xpaths['post_datetime']).get_attribute('datetime')
+        post_info = {
+            'post_id': post_id,
+            'author': p_author,
+            'description': p_description,
+            'date': p_date
+        }
+        return post_info
