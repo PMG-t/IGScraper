@@ -48,6 +48,9 @@ class IGScraper():
         self.set_profile(profile)
         self.driver = webdriver.Chrome(chromedriver_path)
 
+    def open_instagram(self):
+        self.driver.get(self.base_ig_url)
+
     def set_profile(self, profile):
         if profile:
             self.profile=profile
@@ -68,11 +71,22 @@ class IGScraper():
     def init_xpaths(self):
         main_div = self.driver.find_element_by_xpath(self.xpaths['main_div'])
         self.xpaths['head_selector'] =      '//*[@id="' + main_div.get_attribute('id')  + '"]'
-        self.xpaths['posts_href'] =          self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div/div/article/div[1]/div/child::div/child::div/a'
-        
-        self.xpaths['post_author'] =        self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[1]/div/header/div[2]/div[1]/div[1]/div/div/div[1]/div/div/a'
-        self.xpaths['post_description'] =   self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[2]/div[1]/ul/div/li/div/div/div[2]/div[1]/h1'
-        self.xpaths['post_datetime'] =      self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[2]/div[2]/div/div/a/div/time'
+        self.xpaths['profile_page'] = {
+            'posts_href':                   self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div/div/article/div[1]/div/child::div/child::div/a',
+        }
+        self.xpaths['login_procedure'] = {
+            'allow_cookies_button':         self.xpaths['head_selector'] + '/div/div/div[2]/div/div/div[1]/div/div[2]/div/div/div/div/div[2]/div/button[2]', 
+            'username_input':               '//*[@id="loginForm"]/div/div[1]/div/label/input',
+            'password_input':               '//*[@id="loginForm"]/div/div[2]/div/label/input',
+            'submit_button':                '//*[@id="loginForm"]/div/div[3]/button',
+            'save_info_button':             self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div/div/div/section/div/button',
+            'notification_button':          self.xpaths['head_selector'] + '/div/div/div[2]/div/div/div[1]/div/div[2]/div/div/div/div/div[2]/div/div/div[3]/button[2]',
+        }
+        self.xpaths['post_info'] = {
+            'post_author':                  self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[1]/div/header/div[2]/div[1]/div[1]/div/div/div[1]/div/div/a',
+            'post_description':             self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[2]/div[1]/ul/div/li/div/div/div[2]/div[1]/h1',
+            'post_datetime':                self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[2]/div[2]/div/div/a/div/time',
+        }
         
         # self.xpaths['first_post'] =         self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div/div[2]/article/div[1]/div/div[1]/div[1]/a',
         # self.xpaths['post_datetime'] =      self.xpaths['head_selector'] + '/div/div/div[2]/div/div/div[1]/div/div[3]/div/div/div/div/div[2]/div/article/div/div[2]/div/div/div[2]/div[2]/div/div/a/div/time',
@@ -87,18 +101,33 @@ class IGScraper():
         #     'others':                       self.xpaths['head_selector'] + '/div/div/div[2]/div/div/div[1]/div/div[3]/div/div/div/div/div[1]/div/div/div[2]/button'
         # }
 
+    def ig_login(self, login_info, sleeptime=10):
+        self.driver.maximize_window()
+        self.open_instagram()
+        self.timeout_exec(self.init_xpaths, sleeptime=sleeptime)
+        self.driver.find_element_by_xpath(self.xpaths['login_procedure']['allow_cookies_button']).click()
+        self.safe_find_element(self.xpaths['login_procedure']['username_input']).send_keys(login_info['username'])
+        self.safe_find_element(self.xpaths['login_procedure']['password_input']).send_keys(login_info['password'])
+        self.safe_find_element(self.xpaths['login_procedure']['submit_button']).click()
+        self.timeout_exec(self.init_xpaths, sleeptime=sleeptime)
+        self.safe_find_element(self.xpaths['login_procedure']['save_info_button']).click()
+        self.timeout_exec(self.init_xpaths, sleeptime=sleeptime)
+        self.safe_find_element(self.xpaths['login_procedure']['notification_button']).click()
+
+
     def profile_url(self):
         return self.base_ig_url + self.profile +'/'
 
     def load_profile_page(self):
         self.driver.get(self.profile_url())
+        self.driver.maximize_window()
         self.timeout_exec(self.init_xpaths)
 
     def scroll_profile(self):
         self.driver.execute_script('window.scrollBy(0, window.innerHeight)')
 
     def get_posts_href(self):
-        a_elements = self.driver.find_elements_by_xpath(self.xpaths['posts_href'])
+        a_elements = self.driver.find_elements_by_xpath(self.xpaths['profile_page']['posts_href'])
         return [self.igs_utils.try_or_default(lambda el: el.get_attribute('href'), args=[a]) for a in a_elements]
 
     def scroll_profile_posts(self, n_post=5, sleeptime=-1):
@@ -127,9 +156,9 @@ class IGScraper():
     def get_post_data(self, post_id, scrape_comments=False):
         self.open_post(post_id)
         self.init_xpaths()
-        p_author = self.safe_find_element(self.xpaths['post_author']).text
-        p_description = self.safe_find_element(self.xpaths['post_description']).text
-        p_date = self.safe_find_element(self.xpaths['post_datetime']).get_attribute('datetime')
+        p_author = self.safe_find_element(self.xpaths['post_info']['post_author']).text
+        p_description = self.safe_find_element(self.xpaths['post_info']['post_description']).text
+        p_date = self.safe_find_element(self.xpaths['post_info']['post_datetime']).get_attribute('datetime')
         post_info = {
             'post_id': post_id,
             'author': p_author,
