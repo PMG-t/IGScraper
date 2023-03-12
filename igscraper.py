@@ -86,20 +86,14 @@ class IGScraper():
             'post_author':                  self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[1]/div/header/div[2]/div[1]/div[1]/div/div/div[1]/div/div/a',
             'post_description':             self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[2]/div[1]/ul/div/li/div/div/div[2]/div[1]/h1',
             'post_datetime':                self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[2]/div[2]/div/div/a/div/time',
+            'post_comments': {
+                'button_more':              self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[2]/div[1]/ul/li/div/button',
+                'users':                    self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[2]/div[1]/ul/child::ul/div/li/div/div/div[2]/h3/div/div/div/a',
+                'comments':                 self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[2]/div[1]/ul/child::ul/div/li/div/div/div[2]/div[1]/span',
+                'comments_datetime':        self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[2]/div[1]/ul/child::ul/div/li/div/div/div[2]/div[2]/div/a/time',
+                'comments_like':            self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[2]/div[1]/ul/child::ul/div/li/div/div/div[2]/div[2]/div/button[1]/div',
+            }
         }
-        
-        # self.xpaths['first_post'] =         self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div/div[2]/article/div[1]/div/div[1]/div[1]/a',
-        # self.xpaths['post_datetime'] =      self.xpaths['head_selector'] + '/div/div/div[2]/div/div/div[1]/div/div[3]/div/div/div/div/div[2]/div/article/div/div[2]/div/div/div[2]/div[2]/div/div/a/div/time',
-        # self.xpaths['post_descr'] =         self.xpaths['head_selector'] + '/div/div/div[2]/div/div/div[1]/div/div[3]/div/div/div/div/div[2]/div/article/div/div[2]/div/div/div[2]/div[1]/ul/div/li/div/div/div[2]/div[1]/h1',
-        # self.xpaths['button_more'] =        self.xpaths['head_selector'] + '/div/div/div[2]/div/div/div[1]/div/div[3]/div/div/div/div/div[2]/div/article/div/div[2]/div/div/div[2]/div[1]/ul/li/div/button',
-        # self.xpaths['users'] =              self.xpaths['head_selector'] + '/div/div/div[2]/div/div/div[1]/div/div[3]/div/div/div/div/div[2]/div/article/div/div[2]/div/div/div[2]/div[1]/ul/child::*/div/li/div/div/div[2]/h3/div[1]/div/span/a',
-        # self.xpaths['comments'] =           self.xpaths['head_selector'] + '/div/div/div[2]/div/div/div[1]/div/div[3]/div/div/div/div/div[2]/div/article/div/div[2]/div/div/div[2]/div[1]/ul/child::*/div/li/div/div/div[2]/div[1]/span',
-        # self.xpaths['comments_datetime'] =  self.xpaths['head_selector'] + '/div/div/div[2]/div/div/div[1]/div/div[3]/div/div/div/div/div[2]/div/article/div/div[2]/div/div/div[2]/div[1]/ul/child::*/div/li/div/div/div[2]/div[2]/div/a/time',
-        # self.xpaths['comments_like'] =      self.xpaths['head_selector'] + '/div/div/div[2]/div/div/div[1]/div/div[3]/div/div/div/div/div[2]/div/article/div/div[2]/div/div/div[2]/div[1]/ul/child::*/div/li/div/div/div[2]/div[2]/div/button[1]/div',
-        # self.xpaths['next_post'] = {
-        #     'first_post':                   self.xpaths['head_selector'] + '/div/div/div[2]/div/div/div[1]/div/div[3]/div/div/div/div/div[1]/div/div/div[1]/button',
-        #     'others':                       self.xpaths['head_selector'] + '/div/div/div[2]/div/div/div[1]/div/div[3]/div/div/div/div/div[1]/div/div/div[2]/button'
-        # }
 
     def ig_login(self, login_info, sleeptime=10):
         self.driver.maximize_window()
@@ -108,7 +102,7 @@ class IGScraper():
         self.driver.find_element_by_xpath(self.xpaths['login_procedure']['allow_cookies_button']).click()
         self.safe_find_element(self.xpaths['login_procedure']['username_input']).send_keys(login_info['username'])
         self.safe_find_element(self.xpaths['login_procedure']['password_input']).send_keys(login_info['password'])
-        self.safe_find_element(self.xpaths['login_procedure']['submit_button']).click()
+        self.timeout_exec(lambda: self.safe_find_element(self.xpaths['login_procedure']['submit_button']).click())
         self.timeout_exec(self.init_xpaths, sleeptime=sleeptime)
         self.safe_find_element(self.xpaths['login_procedure']['save_info_button']).click()
         self.timeout_exec(self.init_xpaths, sleeptime=sleeptime)
@@ -153,7 +147,7 @@ class IGScraper():
         WebDriverWait(self.driver, timeout).until(EC.presence_of_element_located((By.XPATH, xpath)))
         return self.driver.find_element_by_xpath(xpath)
 
-    def get_post_data(self, post_id, scrape_comments=False):
+    def get_post_data(self, post_id, scrape_comments=False, load_comments_steps=10, load_comments_retry=3):
         self.open_post(post_id)
         self.init_xpaths()
         p_author = self.safe_find_element(self.xpaths['post_info']['post_author']).text
@@ -165,7 +159,37 @@ class IGScraper():
             'description': p_description,
             'date': p_date
         }
+        if scrape_comments:
+            post_info['comments'] = self.get_post_comments(load_steps=load_comments_steps, load_retry=load_comments_retry)
         return post_info
     
-    def get_posts_data(self, post_ids, scrape_comments=False):
-        return [self.get_post_data(pid, scrape_comments=scrape_comments) for pid in post_ids]
+    def get_posts_data(self, post_ids, scrape_comments=False, load_comments_steps=10, load_comments_retry=3):
+        posts_data = []
+        for idx,pid in enumerate(post_ids):
+            self.log(f'Post scraped: {idx} / {len(post_ids)} {self.igs_utils.status_bar(idx/len(post_ids))}', category='success', overwrite=(not scrape_comments))
+            self.log('')
+            posts_data.append(self.get_post_data(pid, scrape_comments=scrape_comments, load_comments_steps=load_comments_steps, load_comments_retry=load_comments_retry))
+        return posts_data
+    
+    def get_post_comments(self, load_steps=10, load_retry=3):
+        tot_steps = load_steps
+        while (load_steps>0 and load_retry>0):
+            try:
+                self.safe_find_element(self.xpaths['post_info']['post_comments']['button_more'], timeout=10).click()
+                self.log(f'Comments scraped: {len(self.driver.find_elements_by_xpath(self.xpaths["post_info"]["post_comments"]["users"]))} | Load more: {tot_steps-load_steps} / {tot_steps} {self.igs_utils.status_bar((tot_steps-load_steps)/tot_steps)}', category='done', overwrite=True)
+            except:
+                load_retry -= 1
+            load_steps -= 1
+        users = self.driver.find_elements_by_xpath(self.xpaths['post_info']['post_comments']['users'])
+        comments = self.driver.find_elements_by_xpath(self.xpaths['post_info']['post_comments']['comments'])
+        comments_datetime = self.driver.find_elements_by_xpath(self.xpaths['post_info']['post_comments']['comments_datetime'])
+        comments_likes = self.driver.find_elements_by_xpath(self.xpaths['post_info']['post_comments']['comments_like'])
+        return [
+            {
+                'user': user.text,
+                'comment': comment.text,
+                'comment_datetime': comment_datetime.get_attribute('datetime'),
+                'comment_likes': int(comment_likes.text.split()[0]) if len(comment_likes.text)>0 and comment_likes.text[0].isnumeric() else 0
+            } 
+            for user, comment, comment_datetime, comment_likes in zip(users, comments, comments_datetime, comments_likes)
+        ]
