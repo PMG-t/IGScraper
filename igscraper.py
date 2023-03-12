@@ -20,7 +20,7 @@ class UTILS:
 
     def status_bar(self, status, show_perc=False, dim=40):
         prog = int(status*dim)
-        return '[' + ''.join(['=' for _ in range(prog-1 if prog>0 else 0)]) + ('>' if prog<dim else '') + ''.join([' ' for _ in range(dim-prog if dim-prog>0 else 0)]) + ']' + (': ' + str(status*100) + '%' if show_perc else '')
+        return '[' + ''.join(['=' for _ in range(prog-1 if prog>0 else 0)]) + ('>' if prog<dim else '') + ''.join([' ' for _ in range((dim-prog-1 if prog==0 else dim-prog) if dim-prog>0 else 0)]) + ']' + (': ' + str(status*100) + '%' if show_perc else '')
 
     def try_or_default(self, f, args=[], default=None):
         try:
