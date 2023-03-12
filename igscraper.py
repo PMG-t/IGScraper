@@ -166,3 +166,6 @@ class IGScraper():
             'date': p_date
         }
         return post_info
+    
+    def get_posts_data(self, post_ids, scrape_comments=False):
+        return [self.get_post_data(pid, scrape_comments=scrape_comments) for pid in post_ids]
