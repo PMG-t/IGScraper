@@ -125,17 +125,19 @@ class IGScraper():
         self.driver.execute_script('window.scrollBy(0, window.innerHeight)')
 
     def get_posts_href(self):
-        a_elements = self.safe_find_element(self.xpaths['profile_page']['posts_href'])
+        a_elements = self.safe_find_elements(self.xpaths['profile_page']['posts_href'])
         return [self.igs_utils.try_or_default(lambda el: el.get_attribute('href'), args=[a]) for a in a_elements]
 
     def scroll_profile_posts(self, n_post=5, sleeptime=-1, write_to_csv=''):
         self.load_profile_page()
         self.timeout_exec(self.init_xpaths, sleeptime=10)
         all_posts = self.get_posts_href()
-        while len(set(all_posts)) < n_post:
+        all_post_unique = set(all_posts)
+        while len(all_post_unique) < n_post:
             self.scroll_profile()
             all_posts.extend(self.timeout_exec(self.get_posts_href, sleeptime=sleeptime))
-            self.log(f'Post loaded: {len(set(all_posts))} / {n_post} {self.igs_utils.status_bar(len(set(all_posts))/n_post)}', category='done', overwrite=True)
+            all_post_unique = set(all_posts)
+            self.log(f'Post loaded: {len(all_post_unique)} / {n_post} {self.igs_utils.status_bar(len(all_post_unique)/n_post)}', category='done', overwrite=True)
         all_posts = [self.get_post_id(post_link) for post_link in list(OrderedDict.fromkeys(all_posts))]
         if write_to_csv:
             filename = write_to_csv+'.csv'
@@ -155,6 +157,10 @@ class IGScraper():
     def safe_find_element(self, xpath, timeout=30):
         WebDriverWait(self.driver, timeout).until(EC.presence_of_element_located((By.XPATH, xpath)))
         return self.driver.find_element_by_xpath(xpath)
+    
+    def safe_find_elements(self, xpath, timeout=30):
+        WebDriverWait(self.driver, timeout).until(EC.presence_of_element_located((By.XPATH, xpath)))
+        return self.driver.find_elements_by_xpath(xpath)
 
     def get_post_data(self, post_id, scrape_comments=False, load_comments_steps=10, load_comments_retry=3):
         self.open_post(post_id)
