@@ -76,6 +76,7 @@ class IGScraper():
         main_div = self.safe_find_element(self.xpaths['main_div'])
         self.xpaths['head_selector'] =      '//*[@id="' + main_div.get_attribute('id')  + '"]'
         self.xpaths['profile_page'] = {
+            'posts_number':                  self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div/header/section/ul/li[1]/div/span/span',
             'posts_href':                   self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div/div/article/div[1]/div/child::div/child::div/a',
         }
         self.xpaths['login_procedure'] = {
@@ -131,6 +132,8 @@ class IGScraper():
     def scroll_profile_posts(self, n_post=5, sleeptime=-1, write_to_csv=''):
         self.load_profile_page()
         self.timeout_exec(self.init_xpaths, sleeptime=10)
+        max_n_post = int(self.safe_find_element(self.xpaths['profile_page']['posts_number']).text.replace(',',''))
+        n_post = max_n_post if n_post>max_n_post else n_post
         all_posts = self.get_posts_href()
         all_post_unique = set(all_posts)
         while len(all_post_unique) < n_post:
@@ -191,7 +194,8 @@ class IGScraper():
             posts_data.append(post_data)
             if write_to_file:
                 self.write_post_data(post_data, write_to_file + '_posts')
-                self.write_comments_data(post_data, write_to_file + '_comments')
+                if scrape_comments:
+                    self.write_comments_data(post_data, write_to_file + '_comments')
         return posts_data
     
     def get_post_comments(self, load_steps=10, load_retry=3):
