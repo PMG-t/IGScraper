@@ -73,7 +73,7 @@ class IGScraper():
             self.igs_utils.throw_msg(message, category, overwrite)
 
     def init_xpaths(self):
-        main_div = self.driver.find_element_by_xpath(self.xpaths['main_div'])
+        main_div = self.safe_find_element(self.xpaths['main_div'])
         self.xpaths['head_selector'] =      '//*[@id="' + main_div.get_attribute('id')  + '"]'
         self.xpaths['profile_page'] = {
             'posts_href':                   self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div/div/article/div[1]/div/child::div/child::div/a',
@@ -103,7 +103,7 @@ class IGScraper():
         self.driver.maximize_window()
         self.open_instagram()
         self.timeout_exec(self.init_xpaths, sleeptime=sleeptime)
-        self.driver.find_element_by_xpath(self.xpaths['login_procedure']['allow_cookies_button']).click()
+        self.driver.find_element(By.XPATH, self.xpaths['login_procedure']['allow_cookies_button']).click()
         self.safe_find_element(self.xpaths['login_procedure']['username_input']).send_keys(login_info['username'])
         self.safe_find_element(self.xpaths['login_procedure']['password_input']).send_keys(login_info['password'])
         self.timeout_exec(lambda: self.safe_find_element(self.xpaths['login_procedure']['submit_button']).click())
@@ -156,11 +156,13 @@ class IGScraper():
 
     def safe_find_element(self, xpath, timeout=30):
         WebDriverWait(self.driver, timeout).until(EC.presence_of_element_located((By.XPATH, xpath)))
-        return self.driver.find_element_by_xpath(xpath)
+        # return self.driver.find_element_by_xpath(xpath) # ! deprecated
+        return self.driver.find_element(By.XPATH, xpath)
     
     def safe_find_elements(self, xpath, timeout=30):
         WebDriverWait(self.driver, timeout).until(EC.presence_of_element_located((By.XPATH, xpath)))
-        return self.driver.find_elements_by_xpath(xpath)
+        # return self.driver.find_elements_by_xpath(xpath) # ! deprecated
+        return self.driver.find_elements(By.XPATH, xpath)
 
     def get_post_data(self, post_id, scrape_comments=False, load_comments_steps=10, load_comments_retry=3):
         self.open_post(post_id)
@@ -197,14 +199,14 @@ class IGScraper():
         while (load_steps>0 and load_retry>0):
             try:
                 self.safe_find_element(self.xpaths['post_info']['post_comments']['button_more'], timeout=10).click()
-                self.log(f'Comments scraped: {len(self.driver.find_elements_by_xpath(self.xpaths["post_info"]["post_comments"]["users"]))} | Load more: {tot_steps-load_steps} / {tot_steps} {self.igs_utils.status_bar((tot_steps-load_steps)/tot_steps)}', category='done', overwrite=True)
+                self.log(f'Comments scraped: {len(self.driver.find_elements(By.XPATH, self.xpaths["post_info"]["post_comments"]["users"]))} | Load more: {tot_steps-load_steps} / {tot_steps} {self.igs_utils.status_bar((tot_steps-load_steps)/tot_steps)}', category='done', overwrite=True)
             except:
                 load_retry -= 1
             load_steps -= 1
-        users = self.driver.find_elements_by_xpath(self.xpaths['post_info']['post_comments']['users'])
-        comments = self.driver.find_elements_by_xpath(self.xpaths['post_info']['post_comments']['comments'])
-        comments_datetime = self.driver.find_elements_by_xpath(self.xpaths['post_info']['post_comments']['comments_datetime'])
-        comments_likes = self.driver.find_elements_by_xpath(self.xpaths['post_info']['post_comments']['comments_like'])
+        users = self.driver.find_elements(By.XPATH, self.xpaths['post_info']['post_comments']['users'])
+        comments = self.driver.find_elements(By.XPATH, self.xpaths['post_info']['post_comments']['comments'])
+        comments_datetime = self.driver.find_elements(By.XPATH, self.xpaths['post_info']['post_comments']['comments_datetime'])
+        comments_likes = self.driver.find_elements(By.XPATH, self.xpaths['post_info']['post_comments']['comments_like'])
         return [
             {
                 'user': user.text,
