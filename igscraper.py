@@ -1,6 +1,10 @@
+import os
 import time
 from datetime import datetime
 from termcolor import colored
+from collections import OrderedDict
+
+import pandas as pd
 
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
@@ -121,16 +125,21 @@ class IGScraper():
         self.driver.execute_script('window.scrollBy(0, window.innerHeight)')
 
     def get_posts_href(self):
-        a_elements = self.driver.find_elements_by_xpath(self.xpaths['profile_page']['posts_href'])
+        a_elements = self.safe_find_element(self.xpaths['profile_page']['posts_href'])
         return [self.igs_utils.try_or_default(lambda el: el.get_attribute('href'), args=[a]) for a in a_elements]
 
-    def scroll_profile_posts(self, n_post=5, sleeptime=-1):
-        self.init_xpaths()
-        all_posts = set(self.get_posts_href())
-        while len(all_posts) < n_post:
-            self.timeout_exec(self.scroll_profile, sleeptime=sleeptime)    
-            _ = [all_posts.add(post) for post in self.get_posts_href()]
-            self.log(f'Post loaded: {len(all_posts)} / {n_post} {self.igs_utils.status_bar(len(all_posts)/n_post)}', category='done', overwrite=True)
+    def scroll_profile_posts(self, n_post=5, sleeptime=-1, write_to_csv=''):
+        self.load_profile_page()
+        self.timeout_exec(self.init_xpaths, sleeptime=10)
+        all_posts = self.get_posts_href()
+        while len(set(all_posts)) < n_post:
+            self.scroll_profile()
+            all_posts.extend(self.timeout_exec(self.get_posts_href, sleeptime=sleeptime))
+            self.log(f'Post loaded: {len(set(all_posts))} / {n_post} {self.igs_utils.status_bar(len(set(all_posts))/n_post)}', category='done', overwrite=True)
+        all_posts = [self.get_post_id(post_link) for post_link in list(OrderedDict.fromkeys(all_posts))]
+        if write_to_csv:
+            filename = write_to_csv+'.csv'
+            pd.DataFrame(all_posts, columns=['post_ids']).to_csv(filename, sep='\t', mode='a', header=not os.path.exists(filename), index=False)
         return all_posts
     
     def get_post_id(self, post_link):
@@ -153,22 +162,28 @@ class IGScraper():
         p_author = self.safe_find_element(self.xpaths['post_info']['post_author']).text
         p_description = self.safe_find_element(self.xpaths['post_info']['post_description']).text
         p_date = self.safe_find_element(self.xpaths['post_info']['post_datetime']).get_attribute('datetime')
-        post_info = {
+        post_data = {
             'post_id': post_id,
-            'author': p_author,
-            'description': p_description,
-            'date': p_date
+            'post_data': {
+                'author': p_author,
+                'description': p_description.replace('\n', ' '),
+                'date': p_date
+            }
         }
         if scrape_comments:
-            post_info['comments'] = self.get_post_comments(load_steps=load_comments_steps, load_retry=load_comments_retry)
-        return post_info
+            post_data['comments_data'] = self.get_post_comments(load_steps=load_comments_steps, load_retry=load_comments_retry)
+        return post_data
     
-    def get_posts_data(self, post_ids, scrape_comments=False, load_comments_steps=10, load_comments_retry=3):
+    def get_posts_data(self, post_ids, scrape_comments=False, load_comments_steps=10, load_comments_retry=3, write_to_file=''):
         posts_data = []
         for idx,pid in enumerate(post_ids):
             self.log(f'Post scraped: {idx} / {len(post_ids)} {self.igs_utils.status_bar(idx/len(post_ids))}', category='success', overwrite=(not scrape_comments))
             self.log('')
-            posts_data.append(self.get_post_data(pid, scrape_comments=scrape_comments, load_comments_steps=load_comments_steps, load_comments_retry=load_comments_retry))
+            post_data = self.get_post_data(pid, scrape_comments=scrape_comments, load_comments_steps=load_comments_steps, load_comments_retry=load_comments_retry)
+            posts_data.append(post_data)
+            if write_to_file:
+                self.write_post_data(post_data, write_to_file + '_posts')
+                self.write_comments_data(post_data, write_to_file + '_comments')
         return posts_data
     
     def get_post_comments(self, load_steps=10, load_retry=3):
@@ -187,9 +202,36 @@ class IGScraper():
         return [
             {
                 'user': user.text,
-                'comment': comment.text,
+                'comment': comment.text.replace('\n', ' '),
                 'comment_datetime': comment_datetime.get_attribute('datetime'),
-                'comment_likes': int(comment_likes.text.split()[0]) if len(comment_likes.text)>0 and comment_likes.text[0].isnumeric() else 0
+                'comment_likes': int(comment_likes.text.split()[0].replace(',','')) if len(comment_likes.text)>0 and comment_likes.text[0].isnumeric() else 0
             } 
             for user, comment, comment_datetime, comment_likes in zip(users, comments, comments_datetime, comments_likes)
         ]
+    
+    def write_post_data(self, post_data, filename):
+        data = [
+            {
+                'post_id': post_data['post_id'],
+                'author': post_data['post_data']['author'],
+                'description': post_data['post_data']['description'],
+                'date': post_data['post_data']['date']
+            }
+        ]
+        filename = filename + '.csv'
+        pd.DataFrame(data).to_csv(filename, mode='a', sep='\t', header=not os.path.exists(filename), index=False)
+
+    def write_comments_data(self, post_data, filename):
+        data = [
+            {
+                'post_id': post_data['post_id'],
+                'user': comment['user'],
+                'comment': comment['comment'],
+                'comment_datetime': comment['comment_datetime'],
+                'comment_likes': comment['comment_likes']  
+            } 
+            for comment in post_data['comments_data']
+        ]
+        filename = filename + '.csv'
+        pd.DataFrame(data).to_csv(filename, mode='a', sep='\t', header=not os.path.exists(filename), index=False)
+        
