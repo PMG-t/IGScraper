@@ -165,7 +165,7 @@ class IGScraper():
     def get_post_data(self, post_id, scrape_comments=False, load_comments_steps=10, load_comments_retry=3):
         self.open_post(post_id)
         self.init_xpaths()
-        p_author = self.safe_find_element(self.xpaths['post_info']['post_author']).text
+        p_author = self.igs_utils.try_or_default(lambda: self.safe_find_element(self.xpaths['post_info']['post_author']).text, default=self.profile)
         p_description = self.safe_find_element(self.xpaths['post_info']['post_description']).text
         p_date = self.safe_find_element(self.xpaths['post_info']['post_datetime']).get_attribute('datetime')
         post_data = {
