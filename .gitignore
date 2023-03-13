@@ -1,6 +1,6 @@
 csv/
 
-note.ipynb
 
-_support.py
+utilities/note.ipynb
 
+utilities/_support.py
