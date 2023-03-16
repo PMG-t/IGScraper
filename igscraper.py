@@ -216,7 +216,7 @@ class IGScraper():
                 'user': user.text,
                 'comment': comment.text.replace('\n', ' '),
                 'comment_datetime': comment_datetime.get_attribute('datetime'),
-                'comment_likes': int(comment_likes.text.split()[0].replace(',','')) if len(comment_likes.text)>0 and comment_likes.text[0].isnumeric() else 0
+                'comment_likes': self.igs_utils.try_or_default(lambda likes: int(sorted(likes.text.split())[0].replace(',','').replace('.','')), args=[comment_likes], default=0)
             } 
             for user, comment, comment_datetime, comment_likes in zip(users, comments, comments_datetime, comments_likes)
         ]
