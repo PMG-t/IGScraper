@@ -45,11 +45,38 @@ class IGScraper():
     xpaths = {
         'main_div': '/html/body/div[2]'
     }
+    relative_xpaths = {
+        'profile_page': {
+        'posts_number':                 '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div/header/section/ul/li[1]/div/span/span',
+        'posts_href':                   '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div/div/article/div[1]/div/child::div/child::div/a',
+        },
+        'login_procedure': {
+            'allow_cookies_button':     '/div/div/div[2]/div/div/div[1]/div/div[2]/div/div/div/div/div[2]/div/button[2]', 
+            'username_input':           '//*[@id="loginForm"]/div/div[1]/div/label/input',
+            'password_input':           '//*[@id="loginForm"]/div/div[2]/div/label/input',
+            'submit_button':            '//*[@id="loginForm"]/div/div[3]/button',
+            'save_info_button':         '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div/div/div/section/div/button',
+            'notification_button':      '/div/div/div[2]/div/div/div[1]/div/div[2]/div/div/div/div/div[2]/div/div/div[3]/button[2]',
+        },
+        'post_info': {
+            'post_author':              '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[1]/div/header/div[2]/div[1]/div[1]/div/div/div[1]/div/div/a',
+            'post_description':         '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[2]/div[1]/ul/div/li/div/div/div[2]/div[1]/h1',
+            'post_datetime':            '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[2]/div[2]/div/div/a/div/time',
+            'post_comments': {
+                'button_more':          '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[2]/div[1]/ul/li/div/button',
+                'users':                '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[2]/div[1]/ul/child::ul/div/li/div/div/div[2]/h3/div/div/div/a',
+                'comments':             '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[2]/div[1]/ul/child::ul/div/li/div/div/div[2]/div[1]/span',
+                'comments_datetime':    '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[2]/div[1]/ul/child::ul/div/li/div/div/div[2]/div[2]/div/a/time',
+                'comments_like':        '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[2]/div[1]/ul/child::ul/div/li/div/div/div[2]/div[2]/div/button[1]/div',
+            }
+        }
+    }
 
     igs_utils = UTILS()
 
-    def __init__(self, chromedriver_path='chromedriver.exe', profile=None):
+    def __init__(self, chromedriver_path='chromedriver.exe', profile=None, relative_xpaths={}):
         self.set_profile(profile)
+        self.relative_xpaths = relative_xpaths if relative_xpaths != {} else self.relative_xpaths
         self.driver = webdriver.Chrome(chromedriver_path)
 
     def open_instagram(self):
@@ -76,27 +103,27 @@ class IGScraper():
         main_div = self.safe_find_element(self.xpaths['main_div'])
         self.xpaths['head_selector'] =      '//*[@id="' + main_div.get_attribute('id')  + '"]'
         self.xpaths['profile_page'] = {
-            'posts_number':                 self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div/header/section/ul/li[1]/div/span/span',
-            'posts_href':                   self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div/div/article/div[1]/div/child::div/child::div/a',
+            'posts_href':                   self.xpaths['head_selector'] + self.relative_xpaths['profile_page']['posts_href'],
+            'posts_number':                 self.xpaths['head_selector'] + self.relative_xpaths['profile_page']['posts_number'],
         }
         self.xpaths['login_procedure'] = {
-            'allow_cookies_button':         self.xpaths['head_selector'] + '/div/div/div[2]/div/div/div[1]/div/div[2]/div/div/div/div/div[2]/div/button[2]', 
-            'username_input':               '//*[@id="loginForm"]/div/div[1]/div/label/input',
-            'password_input':               '//*[@id="loginForm"]/div/div[2]/div/label/input',
-            'submit_button':                '//*[@id="loginForm"]/div/div[3]/button',
-            'save_info_button':             self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div/div/div/section/div/button',
-            'notification_button':          self.xpaths['head_selector'] + '/div/div/div[2]/div/div/div[1]/div/div[2]/div/div/div/div/div[2]/div/div/div[3]/button[2]',
+            'allow_cookies_button':         self.xpaths['head_selector'] + self.relative_xpaths['login_procedure']['allow_cookies_button'],
+            'username_input':               self.relative_xpaths['login_procedure']['username_input'],
+            'password_input':               self.relative_xpaths['login_procedure']['password_input'],
+            'submit_button':                self.relative_xpaths['login_procedure']['submit_button'],
+            'save_info_button':             self.xpaths['head_selector'] + self.relative_xpaths['login_procedure']['save_info_button'],
+            'notification_button':          self.xpaths['head_selector'] + self.relative_xpaths['login_procedure']['notification_button'],
         }
         self.xpaths['post_info'] = {
-            'post_author':                  self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[1]/div/header/div[2]/div[1]/div[1]/div/div/div[1]/div/div/a',
-            'post_description':             self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[2]/div[1]/ul/div/li/div/div/div[2]/div[1]/h1',
-            'post_datetime':                self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[2]/div[2]/div/div/a/div/time',
+            'post_author':                  self.xpaths['head_selector'] + self.relative_xpaths['post_info']['post_author'],
+            'post_description':             self.xpaths['head_selector'] + self.relative_xpaths['post_info']['post_description'],
+            'post_datetime':                self.xpaths['head_selector'] + self.relative_xpaths['post_info']['post_datetime'],
             'post_comments': {
-                'button_more':              self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[2]/div[1]/ul/li/div/button',
-                'users':                    self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[2]/div[1]/ul/child::ul/div/li/div/div/div[2]/h3/div/div/div/a',
-                'comments':                 self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[2]/div[1]/ul/child::ul/div/li/div/div/div[2]/div[1]/span',
-                'comments_datetime':        self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[2]/div[1]/ul/child::ul/div/li/div/div/div[2]/div[2]/div/a/time',
-                'comments_like':            self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div[1]/div[1]/article/div/div[2]/div/div[2]/div[1]/ul/child::ul/div/li/div/div/div[2]/div[2]/div/button[1]/div',
+                'button_more':              self.xpaths['head_selector'] + self.relative_xpaths['post_info']['post_comments']['button_more'],
+                'users':                    self.xpaths['head_selector'] + self.relative_xpaths['post_info']['post_comments']['users'],
+                'comments':                 self.xpaths['head_selector'] + self.relative_xpaths['post_info']['post_comments']['comments'],
+                'comments_datetime':        self.xpaths['head_selector'] + self.relative_xpaths['post_info']['post_comments']['comments_datetime'],
+                'comments_like':            self.xpaths['head_selector'] + self.relative_xpaths['post_info']['post_comments']['comments_like'],
             }
         }
 
