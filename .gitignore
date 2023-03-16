@@ -4,3 +4,5 @@ csv/
 utilities/note.ipynb
 
 utilities/_support.py
+
+utilities/lookup_users.pkl

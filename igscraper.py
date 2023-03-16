@@ -76,7 +76,7 @@ class IGScraper():
         main_div = self.safe_find_element(self.xpaths['main_div'])
         self.xpaths['head_selector'] =      '//*[@id="' + main_div.get_attribute('id')  + '"]'
         self.xpaths['profile_page'] = {
-            'posts_number':                  self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div/header/section/ul/li[1]/div/span/span',
+            'posts_number':                 self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div/header/section/ul/li[1]/div/span/span',
             'posts_href':                   self.xpaths['head_selector'] + '/div/div/div[1]/div/div/div/div[1]/div[1]/div[2]/section/main/div/div/article/div[1]/div/child::div/child::div/a',
         }
         self.xpaths['login_procedure'] = {
